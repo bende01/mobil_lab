@@ -3,5 +3,114 @@ package com.example.spotify_api.ViewModel;
 import androidx.appcompat.app.AppCompatActivity;
 
 //Ez a Login-ért felelős activity, ide egy spotify api specifikus kód fog kerülni
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.app.Activity;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.Window;
+import android.widget.Toast;
+
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.Volley;
+import com.example.spotify_api.Model.Actors.User;
+import com.example.spotify_api.Model.Api.UserService;
+import com.example.spotify_api.R;
+import com.spotify.sdk.android.auth.AuthorizationClient;
+import com.spotify.sdk.android.auth.AuthorizationRequest;
+import com.spotify.sdk.android.auth.AuthorizationResponse;
+
+
+
+import static com.spotify.sdk.android.auth.AuthorizationResponse.Type.TOKEN;
+
 public class SplashActivity extends AppCompatActivity {
+
+    private SharedPreferences.Editor editor;
+    private SharedPreferences msharedPreferences;
+    private RequestQueue queue;
+
+    private static final String CLIENT_ID = "3c870d78055e461abda7ec5fe5d3cea6";
+    private static final String REDIRECT_URI ="hu.bme.playlisthelper://callback";
+    private static final int REQUEST_CODE = 1337;
+    private static final String SCOPES = "user-read-recently-played,user-library-modify,playlist-modify-private,user-read-email,user-read-private,playlist-modify-public";
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        getSupportActionBar().hide();
+        setContentView(R.layout.activity_splash);
+
+        authenticateSpotify();
+
+        msharedPreferences = this.getSharedPreferences("SPOTIFY", 0);
+        queue = Volley.newRequestQueue(this);
+    }
+
+
+    private void authenticateSpotify() {
+        AuthorizationRequest.Builder builder = new AuthorizationRequest.Builder(CLIENT_ID, TOKEN, REDIRECT_URI);
+        builder.setScopes(new String[]{SCOPES});
+        AuthorizationRequest request = builder.build();
+        AuthorizationClient.openLoginActivity(this, REQUEST_CODE, request);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
+        super.onActivityResult(requestCode, resultCode, intent);
+
+        // Check if result comes from the correct activity
+        if (requestCode == REQUEST_CODE) {
+            AuthorizationResponse response = AuthorizationClient.getResponse(resultCode, intent);
+
+            switch (response.getType()) {
+                // Response was successful and contains auth token
+                case TOKEN:
+                    editor = getSharedPreferences("SPOTIFY", 0).edit();
+                    editor.putString("token", response.getAccessToken());
+                    Log.d("STARTING", "GOT AUTH TOKEN");
+                    editor.apply();
+                    waitForUserInfo();
+                    break;
+
+                // Auth flow returned an error
+                case ERROR: {
+                    Toast.makeText(SplashActivity.this, "Login failed!",
+                            Toast.LENGTH_SHORT).show();
+                    finishThisActivity(Activity.RESULT_CANCELED);
+                }
+                break;
+
+                // Most likely auth flow was cancelled
+                default:
+                    Toast.makeText(SplashActivity.this, "Error during login!",
+                            Toast.LENGTH_SHORT).show();
+                    // Handle other cases
+            }
+        }
+    }
+
+    private void waitForUserInfo() {
+        UserService userService = new UserService(queue, msharedPreferences);
+        userService.get(() -> {
+            User user = userService.getUser();
+            editor = getSharedPreferences("SPOTIFY", 0).edit();
+            editor.putString("userid", user.id);
+            Log.d("STARTING", "GOT USER INFORMATION");
+            // We use commit instead of apply because we need the information stored immediately
+            editor.commit();
+            Toast.makeText(SplashActivity.this, "Login successful!",
+                    Toast.LENGTH_SHORT).show();
+            finishThisActivity(Activity.RESULT_OK);
+        });
+    }
+
+    private void finishThisActivity(int resultCode) {
+        Intent resultIntent = new Intent();
+        setResult(resultCode, resultIntent);
+        finish();
+    }
 }
