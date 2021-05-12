@@ -1,38 +1,65 @@
 package com.example.spotify_api.View;
 
+
+
+import android.app.Activity;
+import android.bluetooth.le.ScanSettings;
+import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
+
+import java.util.ArrayList;
+import java.util.Objects;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.fragment.NavHostFragment;
+
 
 import com.example.spotify_api.R;
+import com.example.spotify_api.ViewModel.SplashActivity;
 
-import java.util.Objects;
 
-//itt fog megvalosulni a Login parbeszed
 public class LoginFragment extends Fragment {
 
     @Override
     public View onCreateView(
-            LayoutInflater inflater,
-            ViewGroup container,
+            LayoutInflater inflater, ViewGroup container,
             Bundle savedInstanceState
     ) {
         // Inflate the layout for this fragment
-
+        return inflater.inflate(R.layout.fragment_login, container, false);
     }
 
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
 
+        view.findViewById(R.id.button_login).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent loginIntent = new Intent(getActivity(), SplashActivity.class);
+                loginIntent.putExtra("activityFinished",0);
+                startActivityForResult(loginIntent,1);
+            }
+        });
     }
 
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
 
+        switch (resultCode){
+            case Activity.RESULT_OK: //login successful
+                NavHostFragment.findNavController(LoginFragment.this)
+                        .navigate(R.id.action_Login_to_MenuScreen);
+                break;
+            default: break;
+        }
 
     }
 

@@ -32,8 +32,8 @@ public class SplashActivity extends AppCompatActivity {
     private SharedPreferences msharedPreferences;
     private RequestQueue queue;
 
-    private static final String CLIENT_ID = "3c870d78055e461abda7ec5fe5d3cea6";
-    private static final String REDIRECT_URI ="hu.bme.playlisthelper://callback";
+    private static final String CLIENT_ID = "ae85e5a53a0447e4a4a7ff9499105cc7";
+    private static final String REDIRECT_URI ="com.example.playlisthelper://callback";
     private static final int REQUEST_CODE = 1337;
     private static final String SCOPES = "user-read-recently-played,user-library-modify,playlist-modify-private,user-read-email,user-read-private,playlist-modify-public";
 
